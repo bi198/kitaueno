@@ -1,11 +1,12 @@
 const mongoose = require('mongoose');
 const express = require('express');
 const bodyParser = require('body-parser');
-const cors = require('cors'); // Thêm thư viện cors
-const moment = require('moment'); // Thêm thư viện moment để định dạng ngày giờ
+const cors = require('cors');
+const moment = require('moment'); // Sử dụng moment để định dạng ngày giờ
 
-// Cấu hình kết nối MongoDB Atlas
+// Cấu hình kết nối MongoDB Atlas từ biến môi trường
 const dbURI =
+  process.env.MONGODB_URI ||
   'mongodb+srv://APPUSER:APPUSER@cluster0.mbb5nem.mongodb.net/Bills?retryWrites=true&w=majority&appName=Cluster0';
 
 // Kết nối đến MongoDB Atlas
@@ -16,24 +17,7 @@ mongoose
 
 const app = express();
 app.use(bodyParser.json());
-app.use(cors()); // Sử dụng middleware cors
-
-const now = new Date();
-
-// Lấy ngày, tháng, năm, giờ, phút, giây
-const day = now.getDate();
-const month = now.getMonth() + 1; // Tháng bắt đầu từ 0
-const year = now.getFullYear();
-const hours = now.getHours();
-const minutes = now.getMinutes();
-const seconds = now.getSeconds();
-
-// Định dạng chuỗi
-const formattedDateTime = `${year}-${month.toString().padStart(2, '0')}-${day
-  .toString()
-  .padStart(2, '0')} ${hours.toString().padStart(2, '0')}:${minutes
-  .toString()
-  .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+app.use(cors());
 
 // Định nghĩa schema và model cho collection Receipt
 const receiptSchema = new mongoose.Schema({
@@ -42,11 +26,10 @@ const receiptSchema = new mongoose.Schema({
   action: { type: String, enum: ['received', 'paid'], required: true },
   status: { type: String, enum: ['active', 'deactive'], default: 'active' },
   description: { type: String, default: '' },
-  modifiedDate: { type: String, default: formattedDateTime }, // Thêm trường ModifiedDate
+  modifiedDate: { type: Date, default: Date.now }, // Thay đổi kiểu dữ liệu thành Date
 });
 
 const Receipt = mongoose.model('Receipt', receiptSchema);
-// Tạo đối tượng Date với thời gian hiện tại
 
 // Hàm thêm một số mới vào collection Receipt
 const addNewReceipt = async (
@@ -63,7 +46,7 @@ const addNewReceipt = async (
       description,
       date,
       status,
-      modifiedDate: formattedDateTime, // Cập nhật ModifiedDate khi thêm mới
+      modifiedDate: new Date(), // Cập nhật ModifiedDate với thời gian hiện tại
     });
     await newEntry.save();
     console.log('Added new receipt to the Receipt collection');
@@ -101,7 +84,7 @@ app.put('/api/bill/receipt/deactivate/:id', async (req, res) => {
   try {
     const updatedReceipt = await Receipt.findByIdAndUpdate(
       receiptId,
-      { status: 'deactive', modifiedDate: formattedDateTime }, // Cập nhật ModifiedDate khi trạng thái thay đổi
+      { status: 'deactive', modifiedDate: new Date() }, // Cập nhật ModifiedDate với thời gian hiện tại
       { new: true }
     );
     if (!updatedReceipt) {
@@ -113,8 +96,21 @@ app.put('/api/bill/receipt/deactivate/:id', async (req, res) => {
   }
 });
 
+// Hàm định dạng receipt
+function formatReceipt(receipt) {
+  return {
+    _id: receipt._id,
+    date: moment(receipt.date).format('YYYY-MM-DD'),
+    value: receipt.value,
+    action: receipt.action,
+    status: receipt.status,
+    description: receipt.description,
+    modifiedDate: moment(receipt.modifiedDate).format('YYYY-MM-DD HH:mm:ss'),
+  };
+}
+
 // Start server
-const port = 3000;
+const port = process.env.PORT || 3000;
 app.listen(port, () =>
   console.log(`Server is running on http://localhost:${port}`)
 );
