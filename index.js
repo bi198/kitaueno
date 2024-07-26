@@ -24,6 +24,7 @@ const receiptSchema = new mongoose.Schema({
   action: { type: String, enum: ['received', 'paid'], required: true },
   status: { type: String, enum: ['active', 'deactive'], default: 'active' },
   description: { type: String, default: '' },
+  updateTime: { type: String, default: new Date().toTimeString },
 });
 
 const Receipt = mongoose.model('Receipt', receiptSchema);
@@ -75,6 +76,7 @@ app.put('/api/bill/receipt/deactivate/:id', async (req, res) => {
     const updatedReceipt = await Receipt.findByIdAndUpdate(
       receiptId,
       { status: 'deactive' },
+      { modifiedDate: new Date() },
       { new: true }
     );
     if (!updatedReceipt) {
