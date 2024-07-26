@@ -24,7 +24,7 @@ const receiptSchema = new mongoose.Schema({
   action: { type: String, enum: ['received', 'paid'], required: true },
   status: { type: String, enum: ['active', 'deactive'], default: 'active' },
   description: { type: String, default: '' },
-  updateTime: { type: String, default: new Date().toTimeString },
+  modifiedDate: { type: Date, default: Date.now }, // Thêm trường ModifiedDate
 });
 
 const Receipt = mongoose.model('Receipt', receiptSchema);
@@ -38,7 +38,14 @@ const addNewReceipt = async (
   status = 'active'
 ) => {
   try {
-    const newEntry = new Receipt({ value, action, description, date, status });
+    const newEntry = new Receipt({
+      value,
+      action,
+      description,
+      date,
+      status,
+      modifiedDate: new Date(), // Cập nhật ModifiedDate khi thêm mới
+    });
     await newEntry.save();
     console.log('Added new receipt to the Receipt collection');
     return newEntry;
@@ -75,8 +82,7 @@ app.put('/api/bill/receipt/deactivate/:id', async (req, res) => {
   try {
     const updatedReceipt = await Receipt.findByIdAndUpdate(
       receiptId,
-      { status: 'deactive' },
-      { modifiedDate: new Date() },
+      { status: 'deactive', modifiedDate: new Date() }, // Cập nhật ModifiedDate khi trạng thái thay đổi
       { new: true }
     );
     if (!updatedReceipt) {
