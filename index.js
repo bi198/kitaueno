@@ -62,7 +62,7 @@ const addNewReceipt = async (
       description,
       date,
       status,
-      modifiedDate: formattedDate, // Cập nhật ModifiedDate khi thêm mới
+      modifiedDate: formattedDateTime, // Cập nhật ModifiedDate khi thêm mới
     });
     await newEntry.save();
     console.log('Added new receipt to the Receipt collection');
@@ -100,7 +100,7 @@ app.put('/api/bill/receipt/deactivate/:id', async (req, res) => {
   try {
     const updatedReceipt = await Receipt.findByIdAndUpdate(
       receiptId,
-      { status: 'deactive', modifiedDate: formattedDate }, // Cập nhật ModifiedDate khi trạng thái thay đổi
+      { status: 'deactive', modifiedDate: formattedDateTime }, // Cập nhật ModifiedDate khi trạng thái thay đổi
       { new: true }
     );
     if (!updatedReceipt) {
