@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const moment = require('moment'); // Sử dụng moment để định dạng ngày giờ
+const moment = require('moment-timezone'); // Thay đổi để sử dụng moment-timezone
 
 // Cấu hình kết nối MongoDB Atlas từ biến môi trường
 const dbURI =
@@ -26,7 +26,7 @@ const receiptSchema = new mongoose.Schema({
   action: { type: String, enum: ['received', 'paid'], required: true },
   status: { type: String, enum: ['active', 'deactive'], default: 'active' },
   description: { type: String, default: '' },
-  modifiedDate: { type: Date, default: Date.now }, // Thay đổi kiểu dữ liệu thành Date
+  modifiedDate: { type: Date, default: Date.now }, // Định nghĩa modifiedDate dưới dạng Date
 });
 
 const Receipt = mongoose.model('Receipt', receiptSchema);
@@ -46,7 +46,7 @@ const addNewReceipt = async (
       description,
       date,
       status,
-      modifiedDate: new Date(), // Cập nhật ModifiedDate với thời gian hiện tại
+      modifiedDate: moment().tz('Asia/Tokyo').toDate(), // Cập nhật ModifiedDate với giờ JST
     });
     await newEntry.save();
     console.log('Added new receipt to the Receipt collection');
@@ -84,7 +84,7 @@ app.put('/api/bill/receipt/deactivate/:id', async (req, res) => {
   try {
     const updatedReceipt = await Receipt.findByIdAndUpdate(
       receiptId,
-      { status: 'deactive', modifiedDate: new Date() }, // Cập nhật ModifiedDate với thời gian hiện tại
+      { status: 'deactive', modifiedDate: moment().tz('Asia/Tokyo').toDate() }, // Cập nhật ModifiedDate với giờ JST
       { new: true }
     );
     if (!updatedReceipt) {
@@ -100,12 +100,14 @@ app.put('/api/bill/receipt/deactivate/:id', async (req, res) => {
 function formatReceipt(receipt) {
   return {
     _id: receipt._id,
-    date: moment(receipt.date).format('YYYY-MM-DD'),
+    date: moment(receipt.date).tz('Asia/Tokyo').format('YYYY-MM-DD'),
     value: receipt.value,
     action: receipt.action,
     status: receipt.status,
     description: receipt.description,
-    modifiedDate: moment(receipt.modifiedDate).format('YYYY-MM-DD HH:mm:ss'),
+    modifiedDate: moment(receipt.modifiedDate)
+      .tz('Asia/Tokyo')
+      .format('YYYY-MM-DD HH:mm:ss'),
   };
 }
 
