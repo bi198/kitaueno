@@ -18,18 +18,6 @@ const app = express();
 app.use(bodyParser.json());
 app.use(cors()); // Sử dụng middleware cors
 
-// Định nghĩa schema và model cho collection Receipt
-const receiptSchema = new mongoose.Schema({
-  date: { type: Date, default: Date.now },
-  value: Number,
-  action: { type: String, enum: ['received', 'paid'], required: true },
-  status: { type: String, enum: ['active', 'deactive'], default: 'active' },
-  description: { type: String, default: '' },
-  modifiedDate: { type: String }, // Thêm trường ModifiedDate
-});
-
-const Receipt = mongoose.model('Receipt', receiptSchema);
-// Tạo đối tượng Date với thời gian hiện tại
 const now = new Date();
 
 // Lấy ngày, tháng, năm, giờ, phút, giây
@@ -46,6 +34,19 @@ const formattedDateTime = `${year}-${month.toString().padStart(2, '0')}-${day
   .padStart(2, '0')} ${hours.toString().padStart(2, '0')}:${minutes
   .toString()
   .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+// Định nghĩa schema và model cho collection Receipt
+const receiptSchema = new mongoose.Schema({
+  date: { type: Date, default: Date.now },
+  value: Number,
+  action: { type: String, enum: ['received', 'paid'], required: true },
+  status: { type: String, enum: ['active', 'deactive'], default: 'active' },
+  description: { type: String, default: '' },
+  modifiedDate: { type: String, default: formattedDateTime }, // Thêm trường ModifiedDate
+});
+
+const Receipt = mongoose.model('Receipt', receiptSchema);
+// Tạo đối tượng Date với thời gian hiện tại
 
 // Hàm thêm một số mới vào collection Receipt
 const addNewReceipt = async (
