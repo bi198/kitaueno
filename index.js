@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors'); // Thêm thư viện cors
+const moment = require('moment'); // Thêm thư viện moment để định dạng ngày giờ
 
 // Cấu hình kết nối MongoDB Atlas
 const dbURI =
@@ -24,10 +25,27 @@ const receiptSchema = new mongoose.Schema({
   action: { type: String, enum: ['received', 'paid'], required: true },
   status: { type: String, enum: ['active', 'deactive'], default: 'active' },
   description: { type: String, default: '' },
-  modifiedDate: { type: Date, default: new Date() }, // Thêm trường ModifiedDate
+  modifiedDate: { type: String }, // Thêm trường ModifiedDate
 });
 
 const Receipt = mongoose.model('Receipt', receiptSchema);
+// Tạo đối tượng Date với thời gian hiện tại
+const now = new Date();
+
+// Lấy ngày, tháng, năm, giờ, phút, giây
+const day = now.getDate();
+const month = now.getMonth() + 1; // Tháng bắt đầu từ 0
+const year = now.getFullYear();
+const hours = now.getHours();
+const minutes = now.getMinutes();
+const seconds = now.getSeconds();
+
+// Định dạng chuỗi
+const formattedDateTime = `${year}-${month.toString().padStart(2, '0')}-${day
+  .toString()
+  .padStart(2, '0')} ${hours.toString().padStart(2, '0')}:${minutes
+  .toString()
+  .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
 // Hàm thêm một số mới vào collection Receipt
 const addNewReceipt = async (
@@ -44,7 +62,7 @@ const addNewReceipt = async (
       description,
       date,
       status,
-      modifiedDate: new Date(), // Cập nhật ModifiedDate khi thêm mới
+      modifiedDate: formattedDate, // Cập nhật ModifiedDate khi thêm mới
     });
     await newEntry.save();
     console.log('Added new receipt to the Receipt collection');
@@ -60,7 +78,7 @@ app.post('/add-receipt', async (req, res) => {
   const { value, action, description, date } = req.body;
   try {
     const newReceipt = await addNewReceipt(value, action, description, date);
-    res.status(201).json(newReceipt);
+    res.status(201).json(formatReceipt(newReceipt));
   } catch (err) {
     res.status(500).json({ error: 'Error adding receipt' });
   }
@@ -69,10 +87,8 @@ app.post('/add-receipt', async (req, res) => {
 // API Endpoint để lấy toàn bộ dữ liệu từ collection Receipt với status active
 app.get('/api/bill/receipt', async (req, res) => {
   try {
-    const receipts = await Receipt.find({ status: 'active' }).sort({
-      date: -1,
-    });
-    res.status(200).json(receipts);
+    const receipts = await Receipt.find({ status: 'active' });
+    res.status(200).json(receipts.map(formatReceipt));
   } catch (err) {
     res.status(500).json({ error: 'Error fetching receipts' });
   }
@@ -84,13 +100,13 @@ app.put('/api/bill/receipt/deactivate/:id', async (req, res) => {
   try {
     const updatedReceipt = await Receipt.findByIdAndUpdate(
       receiptId,
-      { status: 'deactive', modifiedDate: new Date() }, // Cập nhật ModifiedDate khi trạng thái thay đổi
+      { status: 'deactive', modifiedDate: formattedDate }, // Cập nhật ModifiedDate khi trạng thái thay đổi
       { new: true }
     );
     if (!updatedReceipt) {
       return res.status(404).json({ error: 'Receipt not found' });
     }
-    res.status(200).json(updatedReceipt);
+    res.status(200).json(formatReceipt(updatedReceipt));
   } catch (err) {
     res.status(500).json({ error: 'Error updating receipt status' });
   }
