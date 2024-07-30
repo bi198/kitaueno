@@ -2,11 +2,9 @@ const mongoose = require('mongoose');
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-/*const moment = require('moment-timezone'); // Thay đổi để sử dụng moment-timezone*/
 
-// Cấu hình kết nối MongoDB Atlas từ biến môi trường
+// Cấu hình kết nối MongoDB Atlas
 const dbURI =
-  process.env.MONGODB_URI ||
   'mongodb+srv://APPUSER:APPUSER@cluster0.mbb5nem.mongodb.net/Bills?retryWrites=true&w=majority&appName=Cluster0';
 
 // Kết nối đến MongoDB Atlas
@@ -17,7 +15,22 @@ mongoose
 
 const app = express();
 app.use(bodyParser.json());
-app.use(cors());
+app.use(cors()); // Sử dụng middleware cors
+
+// Hàm lấy thời gian hiện tại theo giờ Nhật Bản và định dạng chuỗi
+const getCurrentDateTimeJST = () => {
+  const now = new Date();
+  now.setHours(now.getHours() + 9); // Chuyển giờ UTC sang JST (UTC+9)
+
+  const year = now.getFullYear();
+  const month = (now.getMonth() + 1).toString().padStart(2, '0');
+  const day = now.getDate().toString().padStart(2, '0');
+  const hours = now.getHours().toString().padStart(2, '0');
+  const minutes = now.getMinutes().toString().padStart(2, '0');
+  const seconds = now.getSeconds().toString().padStart(2, '0');
+
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+};
 
 // Định nghĩa schema và model cho collection Receipt
 const receiptSchema = new mongoose.Schema({
@@ -26,7 +39,7 @@ const receiptSchema = new mongoose.Schema({
   action: { type: String, enum: ['received', 'paid'], required: true },
   status: { type: String, enum: ['active', 'deactive'], default: 'active' },
   description: { type: String, default: '' },
-  modifiedDate: { type: Date, default: Date.now }, // Định nghĩa modifiedDate dưới dạng Date
+  modifiedDate: { type: String, default: getCurrentDateTimeJST }, // Thêm trường ModifiedDate
 });
 
 const Receipt = mongoose.model('Receipt', receiptSchema);
@@ -46,7 +59,7 @@ const addNewReceipt = async (
       description,
       date,
       status,
-      modifiedDate: new Date(), // Cập nhật ModifiedDate với giờ JST
+      modifiedDate: getCurrentDateTimeJST(), // Cập nhật ModifiedDate khi thêm mới
     });
     await newEntry.save();
     console.log('Added new receipt to the Receipt collection');
@@ -62,7 +75,7 @@ app.post('/add-receipt', async (req, res) => {
   const { value, action, description, date } = req.body;
   try {
     const newReceipt = await addNewReceipt(value, action, description, date);
-    res.status(201).json(formatReceipt(newReceipt));
+    res.status(201).json(newReceipt);
   } catch (err) {
     res.status(500).json({ error: 'Error adding receipt' });
   }
@@ -72,47 +85,32 @@ app.post('/add-receipt', async (req, res) => {
 app.get('/api/bill/receipt', async (req, res) => {
   try {
     const receipts = await Receipt.find({ status: 'active' });
-    res.status(200).json(receipts.map(formatReceipt));
+    res.status(200).json(receipts);
   } catch (err) {
     res.status(500).json({ error: 'Error fetching receipts' });
   }
 });
-const date = new Date();
+
 // API Endpoint để cập nhật status từ active thành deactive
 app.put('/api/bill/receipt/deactivate/:id', async (req, res) => {
   const receiptId = req.params.id;
   try {
     const updatedReceipt = await Receipt.findByIdAndUpdate(
       receiptId,
-      { status: 'deactive', date }, // Cập nhật ModifiedDate với giờ JST
+      { status: 'deactive', modifiedDate: getCurrentDateTimeJST() }, // Cập nhật ModifiedDate khi trạng thái thay đổi
       { new: true }
     );
     if (!updatedReceipt) {
       return res.status(404).json({ error: 'Receipt not found' });
     }
-    res.status(200).json(formatReceipt(updatedReceipt));
+    res.status(200).json(updatedReceipt);
   } catch (err) {
     res.status(500).json({ error: 'Error updating receipt status' });
   }
 });
 
-// Hàm định dạng receipt
-function formatReceipt(receipt) {
-  return {
-    _id: receipt._id,
-    date: receipt.date,
-    value: receipt.value,
-    action: receipt.action,
-    status: receipt.status,
-    description: receipt.description,
-    modifiedDate: receipt.modifiedDate
-      .tz('Asia/Tokyo')
-      .format('YYYY-MM-DD HH:mm:ss'),
-  };
-}
-
 // Start server
-const port = process.env.PORT || 3000;
+const port = 3000;
 app.listen(port, () =>
   console.log(`Server is running on http://localhost:${port}`)
 );
