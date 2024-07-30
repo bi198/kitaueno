@@ -34,7 +34,7 @@ const receiptSchema = new mongoose.Schema({
   action: { type: String, enum: ['received', 'paid'], required: true },
   status: { type: String, enum: ['active', 'deactive'], default: 'active' },
   description: { type: String, default: '' },
-  modifiedDate: { type: String, default: formattedDateTime }, // Thêm trường ModifiedDate
+  modifiedDate: { type: String, default: getCurrentTimePlus9Hours() }, // Thêm trường ModifiedDate
 });
 
 const Receipt = mongoose.model('Receipt', receiptSchema);
@@ -55,7 +55,7 @@ const addNewReceipt = async (
       description,
       date,
       status,
-      modifiedDate: formattedDateTime, // Cập nhật ModifiedDate khi thêm mới
+      modifiedDate: getCurrentTimePlus9Hours(), // Cập nhật ModifiedDate khi thêm mới
     });
     await newEntry.save();
     console.log('Added new receipt to the Receipt collection');
