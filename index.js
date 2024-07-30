@@ -18,23 +18,6 @@ const app = express();
 app.use(bodyParser.json());
 app.use(cors()); // Sử dụng middleware cors
 
-const now = new Date().addHours(9);
-
-// Lấy ngày, tháng, năm, giờ, phút, giây
-const day = now.getDate();
-const month = now.getMonth() + 1; // Tháng bắt đầu từ 0
-const year = now.getFullYear();
-const hours = now.getHours();
-const minutes = now.getMinutes();
-const seconds = now.getSeconds();
-
-// Định dạng chuỗi
-const formattedDateTime = `${year}-${month.toString().padStart(2, '0')}-${day
-  .toString()
-  .padStart(2, '0')} ${hours.toString().padStart(2, '0')}:${minutes
-  .toString()
-  .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-
 // Định nghĩa schema và model cho collection Receipt
 const receiptSchema = new mongoose.Schema({
   date: { type: Date, default: Date.now },
@@ -42,7 +25,7 @@ const receiptSchema = new mongoose.Schema({
   action: { type: String, enum: ['received', 'paid'], required: true },
   status: { type: String, enum: ['active', 'deactive'], default: 'active' },
   description: { type: String, default: '' },
-  modifiedDate: { type: String, default: formattedDateTime }, // Thêm trường ModifiedDate
+  modifiedDate: { type: String, default: new Date().toLocaleDateString() }, // Thêm trường ModifiedDate
 });
 
 const Receipt = mongoose.model('Receipt', receiptSchema);
@@ -63,7 +46,7 @@ const addNewReceipt = async (
       description,
       date,
       status,
-      modifiedDate: formattedDateTime, // Cập nhật ModifiedDate khi thêm mới
+      modifiedDate: new Date().toLocaleDateString(), // Cập nhật ModifiedDate khi thêm mới
     });
     await newEntry.save();
     console.log('Added new receipt to the Receipt collection');
@@ -101,7 +84,7 @@ app.put('/api/bill/receipt/deactivate/:id', async (req, res) => {
   try {
     const updatedReceipt = await Receipt.findByIdAndUpdate(
       receiptId,
-      { status: 'deactive', modifiedDate: formattedDateTime }, // Cập nhật ModifiedDate khi trạng thái thay đổi
+      { status: 'deactive', modifiedDate: new Date().toLocaleDateString() }, // Cập nhật ModifiedDate khi trạng thái thay đổi
       { new: true }
     );
     if (!updatedReceipt) {
