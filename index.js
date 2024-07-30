@@ -23,7 +23,8 @@ function getCurrentTimePlus9Hours() {
 
   // Cộng thêm 9 tiếng
   now.setHours(now.getHours() + 9);
-
+  console.log(now.toDateString());
+  console.log(now);
   // Trả về thời gian sau khi đã cộng thêm 9 tiếng
   return now;
 }
