@@ -1,22 +1,23 @@
 const mongoose = require('mongoose');
 const express = require('express');
 const bodyParser = require('body-parser');
-const cors = require('cors'); // Thêm thư viện cors
-const moment = require('moment'); // Thêm thư viện moment để định dạng ngày giờ
+const cors = require('cors');
+/*const moment = require('moment-timezone'); // Thay đổi để sử dụng moment-timezone*/
 
-// Cấu hình kết nối MongoDB Atlas
+// Cấu hình kết nối MongoDB Atlas từ biến môi trường
 const dbURI =
+  process.env.MONGODB_URI ||
   'mongodb+srv://APPUSER:APPUSER@cluster0.mbb5nem.mongodb.net/Bills?retryWrites=true&w=majority&appName=Cluster0';
 
 // Kết nối đến MongoDB Atlas
 mongoose
-  .connect(dbURI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .connect(dbURI, {})
   .then(() => console.log('Connected to MongoDB Atlas'))
   .catch((err) => console.error('Error connecting to MongoDB Atlas:', err));
 
 const app = express();
 app.use(bodyParser.json());
-app.use(cors()); // Sử dụng middleware cors
+app.use(cors());
 
 // Định nghĩa schema và model cho collection Receipt
 const receiptSchema = new mongoose.Schema({
@@ -25,11 +26,10 @@ const receiptSchema = new mongoose.Schema({
   action: { type: String, enum: ['received', 'paid'], required: true },
   status: { type: String, enum: ['active', 'deactive'], default: 'active' },
   description: { type: String, default: '' },
-  modifiedDate: { type: String, default: new Date().toLocaleDateString() }, // Thêm trường ModifiedDate
+  modifiedDate: { type: Date, default: Date.now }, // Định nghĩa modifiedDate dưới dạng Date
 });
 
 const Receipt = mongoose.model('Receipt', receiptSchema);
-// Tạo đối tượng Date với thời gian hiện tại
 
 // Hàm thêm một số mới vào collection Receipt
 const addNewReceipt = async (
@@ -46,7 +46,7 @@ const addNewReceipt = async (
       description,
       date,
       status,
-      modifiedDate: new Date().toLocaleDateString(), // Cập nhật ModifiedDate khi thêm mới
+      modifiedDate: new Date(), // Cập nhật ModifiedDate với giờ JST
     });
     await newEntry.save();
     console.log('Added new receipt to the Receipt collection');
@@ -77,14 +77,14 @@ app.get('/api/bill/receipt', async (req, res) => {
     res.status(500).json({ error: 'Error fetching receipts' });
   }
 });
-
+const date = new Date();
 // API Endpoint để cập nhật status từ active thành deactive
 app.put('/api/bill/receipt/deactivate/:id', async (req, res) => {
   const receiptId = req.params.id;
   try {
     const updatedReceipt = await Receipt.findByIdAndUpdate(
       receiptId,
-      { status: 'deactive', modifiedDate: new Date().toLocaleDateString() }, // Cập nhật ModifiedDate khi trạng thái thay đổi
+      { status: 'deactive', date }, // Cập nhật ModifiedDate với giờ JST
       { new: true }
     );
     if (!updatedReceipt) {
@@ -96,8 +96,23 @@ app.put('/api/bill/receipt/deactivate/:id', async (req, res) => {
   }
 });
 
+// Hàm định dạng receipt
+function formatReceipt(receipt) {
+  return {
+    _id: receipt._id,
+    date: receipt.date,
+    value: receipt.value,
+    action: receipt.action,
+    status: receipt.status,
+    description: receipt.description,
+    modifiedDate: receipt.modifiedDate
+      .tz('Asia/Tokyo')
+      .format('YYYY-MM-DD HH:mm:ss'),
+  };
+}
+
 // Start server
-const port = 3000;
+const port = process.env.PORT || 3000;
 app.listen(port, () =>
   console.log(`Server is running on http://localhost:${port}`)
 );
