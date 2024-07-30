@@ -17,24 +17,16 @@ mongoose
 const app = express();
 app.use(bodyParser.json());
 app.use(cors()); // Sử dụng middleware cors
+function getCurrentTimePlus9Hours() {
+  // Lấy thời gian hiện tại
+  const now = new Date();
 
-const now = new Date().addHours(9);
+  // Cộng thêm 9 tiếng
+  now.setHours(now.getHours() + 9);
 
-// Lấy ngày, tháng, năm, giờ, phút, giây
-const day = now.getDate();
-const month = now.getMonth() + 1; // Tháng bắt đầu từ 0
-const year = now.getFullYear();
-const hours = now.getHours();
-const minutes = now.getMinutes();
-const seconds = now.getSeconds();
-
-// Định dạng chuỗi
-const formattedDateTime = `${year}-${month.toString().padStart(2, '0')}-${day
-  .toString()
-  .padStart(2, '0')} ${hours.toString().padStart(2, '0')}:${minutes
-  .toString()
-  .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-
+  // Trả về thời gian sau khi đã cộng thêm 9 tiếng
+  return now;
+}
 // Định nghĩa schema và model cho collection Receipt
 const receiptSchema = new mongoose.Schema({
   date: { type: Date, default: Date.now },
@@ -78,7 +70,12 @@ const addNewReceipt = async (
 app.post('/add-receipt', async (req, res) => {
   const { value, action, description, date } = req.body;
   try {
-    const newReceipt = await addNewReceipt(value, action, description, date);
+    const newReceipt = await addNewReceipt(
+      value,
+      action,
+      description,
+      getCurrentTimePlus9Hours()
+    );
     res.status(201).json(formatReceipt(newReceipt));
   } catch (err) {
     res.status(500).json({ error: 'Error adding receipt' });
@@ -101,7 +98,7 @@ app.put('/api/bill/receipt/deactivate/:id', async (req, res) => {
   try {
     const updatedReceipt = await Receipt.findByIdAndUpdate(
       receiptId,
-      { status: 'deactive', modifiedDate: formattedDateTime }, // Cập nhật ModifiedDate khi trạng thái thay đổi
+      { status: 'deactive', modifiedDate: getCurrentTimePlus9Hours() }, // Cập nhật ModifiedDate khi trạng thái thay đổi
       { new: true }
     );
     if (!updatedReceipt) {
