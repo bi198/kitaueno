@@ -117,6 +117,23 @@ app.put('/api/bill/receipt/deactivate/:id', async (req, res) => {
   }
 });
 
+// API Endpoint để cập nhật status từ active thành reactive
+app.put('/api/bill/receipt/reactivate/:id', async (req, res) => {
+  const receiptId = req.params.id;
+  try {
+    const updatedReceipt = await Receipt.findByIdAndUpdate(
+      receiptId,
+      { status: 'active', modifiedDate: getCurrentDateTimeJST() }, // Cập nhật ModifiedDate khi trạng thái thay đổi
+      { new: true }
+    );
+    if (!updatedReceipt) {
+      return res.status(404).json({ error: 'Receipt not found' });
+    }
+    res.status(200).json(updatedReceipt);
+  } catch (err) {
+    res.status(500).json({ error: 'Error updating receipt status' });
+  }
+});
 // Start server
 const port = 3000;
 app.listen(port, () =>
