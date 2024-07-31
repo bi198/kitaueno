@@ -21,7 +21,6 @@ app.use(cors()); // Sử dụng middleware cors
 const getCurrentDateTimeJST = () => {
   const now = new Date();
   now.setHours(now.getHours() + 9); // Chuyển giờ UTC sang JST (UTC+9)
-
   const year = now.getFullYear();
   const month = (now.getMonth() + 1).toString().padStart(2, '0');
   const day = now.getDate().toString().padStart(2, '0');
@@ -29,7 +28,7 @@ const getCurrentDateTimeJST = () => {
   const minutes = now.getMinutes().toString().padStart(2, '0');
   const seconds = now.getSeconds().toString().padStart(2, '0');
 
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds} (+9 Tokyo Japan)`;
 };
 
 // Định nghĩa schema và model cho collection Receipt
