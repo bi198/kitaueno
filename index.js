@@ -81,6 +81,16 @@ app.post('/add-receipt', async (req, res) => {
 });
 
 // API Endpoint để lấy toàn bộ dữ liệu từ collection Receipt với status active
+app.get('/api/bill/receipt/deleted_receipts', async (req, res) => {
+  try {
+    const receipts = await Receipt.find({ status: 'deactive' });
+    res.status(200).json(receipts);
+  } catch (err) {
+    res.status(500).json({ error: 'Error fetching receipts' });
+  }
+});
+
+// API Endpoint để lấy toàn bộ dữ liệu từ collection Receipt với status active
 app.get('/api/bill/receipt', async (req, res) => {
   try {
     const receipts = await Receipt.find({ status: 'active' });
@@ -89,7 +99,6 @@ app.get('/api/bill/receipt', async (req, res) => {
     res.status(500).json({ error: 'Error fetching receipts' });
   }
 });
-
 // API Endpoint để xóa
 app.put('/api/bill/receipt/performDelete/:id', async (req, res) => {
   const receiptId = req.params.id;
