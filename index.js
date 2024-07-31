@@ -94,7 +94,7 @@ app.get('/api/bill/receipt', async (req, res) => {
 app.put('/api/bill/receipt/performDelete/:id', async (req, res) => {
   const receiptId = req.params.id;
   try {
-    const result = await Receipt.deleteMany({ _id: receiptId });
+    const result = await Receipt.findByIdAndDelete({ _id: receiptId });
     if (result.deletedCount === 0) {
       return res.status(404).json({ error: 'Receipt not found' });
     }
