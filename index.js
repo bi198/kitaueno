@@ -90,6 +90,15 @@ app.get('/api/bill/receipt', async (req, res) => {
   }
 });
 
+// API Endpoint để lấy toàn bộ dữ liệu từ collection Receipt với status deactive
+app.get('/api/bill/deleted_receipts', async (req, res) => {
+  try {
+    const receipts = await Receipt.find({ status: 'deactive' });
+    res.status(200).json(receipts);
+  } catch (err) {
+    res.status(500).json({ error: 'Error fetching receipts' });
+  }
+});
 // API Endpoint để cập nhật status từ active thành deactive
 app.put('/api/bill/receipt/deactivate/:id', async (req, res) => {
   const receiptId = req.params.id;
