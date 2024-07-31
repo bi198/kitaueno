@@ -90,13 +90,17 @@ app.get('/api/bill/receipt', async (req, res) => {
   }
 });
 
-// API Endpoint để lấy toàn bộ dữ liệu từ collection Receipt với status deactive
-app.get('/api/bill/deleted_receipts', async (req, res) => {
+// API Endpoint để xóa
+app.put('/api/bill/receipt/performDelete/:id', async (req, res) => {
+  const receiptId = req.params.id;
   try {
-    const receipts = await Receipt.find({ status: 'deactive' });
-    res.status(200).json(receipts);
+    const result = await Receipt.deleteMany({ _id: receiptId });
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: 'Receipt not found' });
+    }
+    res.status(200).json({ message: 'Receipt deleted successfully' });
   } catch (err) {
-    res.status(500).json({ error: 'Error fetching receipts' });
+    res.status(500).json({ error: 'Error deleting receipt' });
   }
 });
 // API Endpoint để cập nhật status từ active thành deactive
@@ -134,6 +138,7 @@ app.put('/api/bill/receipt/reactivate/:id', async (req, res) => {
     res.status(500).json({ error: 'Error updating receipt status' });
   }
 });
+
 // Start server
 const port = 3000;
 app.listen(port, () =>
