@@ -94,7 +94,7 @@ app.get('/api/bill/receipt/deleted_receipts', async (req, res) => {
 app.get('/api/bill/receipt', async (req, res) => {
   try {
     const receipts = await Receipt.find({ status: 'active' })
-                                  .sort({ date: -1 });;
+                                  .sort({ date: 1 });;
     res.status(200).json(receipts);
   } catch (err) {
     res.status(500).json({ error: 'Error fetching receipts' });
